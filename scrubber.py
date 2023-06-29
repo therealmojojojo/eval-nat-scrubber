@@ -5,21 +5,33 @@ import requests
 import time
 from pprint import pprint
 from bs4 import BeautifulSoup
-path = "http://evaluare.edu.ro/Evaluare/CandFromJudIAD.aspx?Jud=4&Poz=0&PageN="
+path = "http://evaluare.edu.ro/Evaluare/CandFromJudIAD.aspx?Jud=24&Poz=0&PageN="
 
 last_page = 807
 
-with open("results_2023.csv", "w", encoding="utf-8") as file_object:
+def get_trs(url):
+    r = requests.get(url)
+    page = BeautifulSoup(r.content, "lxml")
+    table = page.find("table",{"class":"mainTable"})
+    return table.find_all("tr")[2:]
+
+with open("results_2023_ilfov.csv", "w", encoding="utf-8") as file_object:
     header = ["student_id, scoala, math, limba romana, limba materna, medie, media materna\n"]
     file_object.writelines(header)
     for i in range(1,last_page+1):
-        time.sleep(0.5)
+        
         url = path + str(i)
         print(i)
-        r = requests.get(url)
-        page = BeautifulSoup(r.content, "lxml")
-        table = page.find("table",{"class":"mainTable"})
-        trs = table.find_all("tr")[2:]
+
+        time.sleep(1)
+        while True:
+            try:
+                trs = get_trs(url)
+                break
+            except:
+                time.sleep(1)
+                print("retrying")
+    
         lines = []
         for tr in trs:
             tds = tr.find_all("td")
